@@ -42,7 +42,7 @@ post_db = [
 
 @app.get('/')
 def root():
-    return "To see the documentation please open the /docs"
+    return "For documentation see /docs"
 
 
 @app.post('/post', response_model=Timestamp, summary='Get Post')
