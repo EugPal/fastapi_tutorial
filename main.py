@@ -1,6 +1,8 @@
 from enum import Enum
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from datetime import datetime
+from typing import List
 
 app = FastAPI()
 
@@ -40,8 +42,46 @@ post_db = [
 
 @app.get('/')
 def root():
-    # ваш код здесь
-    ...
+    return "To see the documentation please open the /docs"
 
-# ваш код здесь
-...
+
+@app.post('/post', response_model=Timestamp, summary='Get Post')
+def get_post():
+    current_time = datetime.now()
+    new_timestamp = Timestamp(id=post_db[-1].id + 1,
+                              timestamp=int(round(current_time.timestamp())))
+    return new_timestamp
+
+
+@app.get('/dog', summary='Get Dogs')
+def get_dogs() -> List[Dog]:
+    return list(dogs_db.values())
+
+
+@app.post('/dog', response_model=Dog, summary='Create Dog')
+def create_dog(dog: Dog):
+    if dog.pk in dogs_db:
+        raise HTTPException(status_code=404, detail="There is a dog with such ID already")
+    else:
+        dogs_db.update({dog.pk: dog})
+    return dog
+
+
+@app.get('/dog/{pk}', response_model=Dog, summary='Get Dog By PK')
+def get_dog_by_pk(pk: int):
+    dog_retrieved = dogs_db.get(pk)
+    if dog_retrieved is None:
+        raise HTTPException(status_code=404, detail="A dog with this ID isn't found")
+    else:
+        return dog_retrieved
+
+
+@app.patch('/dog/{pk}', response_model=Dog, summary='Update Dog')
+def update_dog(pk: int, dog: Dog):
+    if pk != dog.pk:
+        raise HTTPException(status_code=404, detail="A dog's ID is not the same as entered")
+    if pk in dogs_db:
+        dogs_db.update({dog.pk: dog})
+        return dog
+    else:
+        raise HTTPException(status_code=404, detail="A dog with such ID wasn't found")
